@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURA Intelligence — 懂你，不必说全。</title>
+<meta name="description" content="AURA Intelligence：在设备上运行的 AI 系统。实时同传、会议纪要、语义相册、情境预判，全部在端侧完成。">
+<style>
+  :root {
+    --bg: #000;
+    --panel: #07070a;
+    --panel-2: #0c0c11;
+    --fg: #f5f5f7;
+    --muted: #8b8b93;
+    --muted-2: #5e5e67;
+    --line: rgba(255, 255, 255, 0.085);
+    --line-2: rgba(255, 255, 255, 0.16);
+    --cyan: #4fd8e8;
+    --violet: #a78bfa;
+    --magenta: #e879c9;
+    --amber: #fbbf24;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+      "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+      sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --ease: cubic-bezier(0.22, 0.7, 0.2, 1);
+    --pad: clamp(20px, 5vw, 110px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  ::selection { background: rgba(79, 216, 232, 0.35); }
+
+  /* ---------- 导航 ---------- */
+  .nav {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 100;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(14px, 2.4vw, 38px);
+    padding: 0 var(--pad);
+    border-bottom: 1px solid transparent;
+    transition: background 0.5s var(--ease), backdrop-filter 0.5s var(--ease),
+      border-color 0.5s var(--ease);
+  }
+
+  .nav.pinned {
+    background: rgba(8, 8, 11, 0.74);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom-color: var(--line);
+  }
+
+  .nav .brand {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    margin-right: clamp(6px, 1.6vw, 24px);
+    white-space: nowrap;
+  }
+
+  .nav .brand em {
+    font-style: normal;
+    color: var(--cyan);
+  }
+
+  .nav a.item {
+    font-size: 12px;
+    opacity: 0.8;
+    white-space: nowrap;
+    transition: opacity 0.3s var(--ease);
+  }
+
+  .nav a.item:hover { opacity: 1; }
+
+  .nav .cta {
+    font-size: 12px;
+    padding: 6px 15px;
+    border-radius: 980px;
+    background: var(--fg);
+    color: #000;
+    font-weight: 500;
+    transition: transform 0.3s var(--ease);
+  }
+
+  .nav .cta:hover { transform: scale(1.05); }
+
+  /* ---------- 基础排版 ---------- */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--pad); }
+  .wrap.wide { max-width: 1360px; }
+
+  h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.028em; line-height: 1.08; margin: 0; }
+
+  .eyebrow {
+    margin: 0 0 14px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .grad {
+    background: linear-gradient(96deg, var(--violet), var(--cyan) 55%, var(--amber));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .display { font-size: clamp(32px, 5.6vw, 78px); letter-spacing: -0.032em; }
+  .h2 { font-size: clamp(28px, 4vw, 56px); }
+  .h3 { font-size: clamp(20px, 2vw, 26px); letter-spacing: -0.022em; }
+
+  .lead {
+    font-size: clamp(16px, 1.5vw, 20px);
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 54ch;
+  }
+
+  .center { text-align: center; }
+  .center .lead { margin-left: auto; margin-right: auto; }
+
+  .sect { padding: clamp(78px, 11vw, 150px) 0; }
+
+  /* ---------- 入场动画（脚本可用时才启用） ---------- */
+  .anim .rv {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.95s var(--ease), transform 1.05s var(--ease);
+  }
+  .anim .rv.in { opacity: 1; transform: none; }
+  .anim .rv.d1 { transition-delay: 0.08s; }
+  .anim .rv.d2 { transition-delay: 0.16s; }
+  .anim .rv.d3 { transition-delay: 0.24s; }
+  .anim .rv.d4 { transition-delay: 0.32s; }
+
+  /* ---------- 与黑底图融合 ---------- */
+  .fuse {
+    mix-blend-mode: screen;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, #000 9%, #000 88%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(to right, rgba(0, 0, 0, 0) 0%, #000 10%, #000 90%, rgba(0, 0, 0, 0) 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, #000 9%, #000 88%, rgba(0, 0, 0, 0) 100%),
+      linear-gradient(to right, rgba(0, 0, 0, 0) 0%, #000 10%, #000 90%, rgba(0, 0, 0, 0) 100%);
+    mask-composite: intersect;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    padding: 92px 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .hero-copy {
+    text-align: center;
+    width: 100%;
+    max-width: 940px;
+    padding: 0 22px;
+    z-index: 2;
+  }
+
+  .hero-copy h1 { font-size: clamp(34px, 6vw, 84px); letter-spacing: -0.035em; }
+
+  .hero-copy .lead { margin: 20px auto 0; }
+
+  .hero-art {
+    position: relative;
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: clamp(8px, 1.6vh, 28px);
+  }
+
+  .hero-art img {
+    width: min(94vw, 1080px);
+    height: auto;
+    animation: breathe 11s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.96; }
+    50% { transform: scale(1.035); opacity: 1; }
+  }
+
+  .cta-row {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 13px 30px;
+    border-radius: 980px;
+    background: var(--fg);
+    color: #000;
+    font-size: 16px;
+    font-weight: 500;
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+  }
+
+  .btn:hover { transform: scale(1.035); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.07); }
+
+  .btn.ghost {
+    background: transparent;
+    border: 1px solid var(--line-2);
+    color: var(--fg);
+  }
+
+  .btn.ghost:hover { background: rgba(255, 255, 255, 0.06); }
+
+  .link { color: var(--cyan); font-size: 16px; display: inline-flex; align-items: center; gap: 5px; }
+  .link span { transition: transform 0.3s var(--ease); }
+  .link:hover span { transform: translateX(4px); }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--muted-2);
+    animation: nudge 2.6s ease-in-out infinite;
+  }
+
+  @keyframes nudge {
+    0%, 100% { opacity: 0.32; transform: translate(-50%, 0); }
+    50% { opacity: 0.85; transform: translate(-50%, 6px); }
+  }
+
+  /* ---------- 宣言 ---------- */
+  .manifesto {
+    padding: clamp(60px, 9vw, 120px) 0;
+    background: linear-gradient(180deg, #000, #06060a 45%, #000);
+  }
+
+  .manifesto p {
+    margin: 0;
+    font-size: clamp(24px, 3.7vw, 54px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.24;
+    color: #6b6b75;
+    transition: color 0.8s var(--ease);
+  }
+
+  .manifesto p.on { color: var(--fg); }
+  .manifesto p + p { margin-top: 0.34em; }
+
+  /* ---------- 能力卡片 ---------- */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: clamp(16px, 1.8vw, 26px);
+    overflow: hidden;
+    margin-top: clamp(38px, 5vw, 64px);
+  }
+
+  .card {
+    background: #060608;
+    padding: clamp(24px, 2.6vw, 38px);
+    transition: background 0.5s var(--ease);
+    position: relative;
+  }
+
+  .card:hover { background: #0d0d13; }
+
+  .card .ico {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 22px;
+    color: var(--cyan);
+  }
+
+  .card .ico svg { width: 100%; height: 100%; }
+
+  .card h3 { font-size: 19px; margin-bottom: 10px; letter-spacing: -0.02em; }
+
+  .card p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.62; }
+
+  .card .tag {
+    display: inline-block;
+    margin-top: 16px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    border: 1px solid var(--line-2);
+    border-radius: 980px;
+    padding: 4px 11px;
+  }
+
+  /* ---------- 图文章节 ---------- */
+  .feature { display: grid; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .feature.two { grid-template-columns: 1fr 1fr; }
+  .feature .art { position: relative; }
+  .feature .art img { width: 100%; height: auto; }
+
+  .feature.rev .art { order: 2; }
+
+  .points { list-style: none; margin: 26px 0 0; padding: 0; }
+
+  .points li {
+    position: relative;
+    padding: 14px 0 14px 30px;
+    border-top: 1px solid var(--line);
+    font-size: 15.5px;
+    color: #c9c9d1;
+    line-height: 1.6;
+  }
+
+  .points li:last-child { border-bottom: 1px solid var(--line); }
+
+  .points li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 22px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+  }
+
+  /* ---------- 同传演示 ---------- */
+  .translator {
+    margin-top: clamp(34px, 4.4vw, 58px);
+    border: 1px solid var(--line);
+    border-radius: clamp(16px, 1.8vw, 24px);
+    background: linear-gradient(180deg, #08080c, #050507);
+    overflow: hidden;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 10px;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 8px 16px;
+    border-radius: 980px;
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: color 0.3s var(--ease), background 0.3s var(--ease);
+  }
+
+  .tab:hover { color: var(--fg); }
+  .tab.on { background: rgba(255, 255, 255, 0.1); color: var(--fg); }
+
+  .tstage {
+    padding: clamp(28px, 4vw, 52px);
+    min-height: 190px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .tline {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    font-size: clamp(17px, 2vw, 26px);
+    letter-spacing: -0.02em;
+    line-height: 1.45;
+  }
+
+  .tline .who {
+    flex: 0 0 auto;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    padding-top: 0.5em;
+    width: 62px;
+  }
+
+  .tline .txt { transition: opacity 0.28s var(--ease), transform 0.28s var(--ease); }
+  .tline.out .txt { opacity: 0; transform: translateY(8px); }
+
+  .tline.ai .txt { color: var(--cyan); }
+
+  .tfoot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px clamp(28px, 4vw, 52px);
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--muted-2);
+  }
+
+  .pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.35; transform: scale(0.85); }
+    50% { opacity: 1; transform: scale(1.15); }
+  }
+
+  /* ---------- 任务演示器 ---------- */
+  .demo {
+    margin-top: clamp(34px, 4.4vw, 58px);
+    border: 1px solid var(--line);
+    border-radius: clamp(16px, 1.8vw, 24px);
+    background:
+      radial-gradient(120% 120% at 12% -10%, rgba(79, 216, 232, 0.1), transparent 55%),
+      radial-gradient(120% 120% at 92% 108%, rgba(167, 139, 250, 0.1), transparent 55%),
+      #06060a;
+    padding: clamp(22px, 3vw, 40px);
+  }
+
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .chip {
+    padding: 8px 16px;
+    border-radius: 980px;
+    border: 1px solid var(--line-2);
+    font-size: 13px;
+    color: var(--muted);
+    transition: all 0.3s var(--ease);
+  }
+
+  .chip:hover { color: var(--fg); }
+  .chip.on { background: var(--fg); border-color: var(--fg); color: #000; }
+
+  .say {
+    margin: clamp(20px, 3vw, 34px) 0 0;
+    font-size: clamp(19px, 2.4vw, 30px);
+    letter-spacing: -0.024em;
+    line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .say .lbl {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+    flex: 0 0 auto;
+  }
+
+  .steps { list-style: none; margin: clamp(24px, 3.4vw, 40px) 0 0; padding: 0; }
+
+  .steps li {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 15px 0;
+    border-top: 1px solid var(--line);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+  }
+
+  .steps li.show { opacity: 1; transform: none; }
+
+  .steps li:last-child { border-bottom: 1px solid var(--line); }
+
+  .steps .n {
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--line-2);
+    display: grid;
+    place-items: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .steps li.done .n {
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+    border-color: transparent;
+    color: #04040a;
+  }
+
+  .steps .t { font-size: 15.5px; color: #cdcdd5; line-height: 1.6; padding-top: 2px; }
+
+  .demo-foot {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .demo-note { font-size: 12px; color: var(--muted-2); }
+
+  /* ---------- 隐私对比 ---------- */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(16px, 2.4vw, 30px);
+    margin-top: clamp(36px, 5vw, 60px);
+  }
+
+  .cp {
+    border: 1px solid var(--line);
+    border-radius: clamp(14px, 1.6vw, 22px);
+    padding: clamp(22px, 2.6vw, 34px);
+    background: #050508;
+  }
+
+  .cp.mine {
+    border-color: rgba(79, 216, 232, 0.35);
+    background:
+      radial-gradient(120% 120% at 50% -20%, rgba(79, 216, 232, 0.1), transparent 60%),
+      #050508;
+  }
+
+  .cp h4 { font-size: 16px; margin-bottom: 6px; }
+
+  .cp .sub { font-size: 12.5px; color: var(--muted-2); margin-bottom: 24px; }
+
+  .diagram { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+
+  .node {
+    width: 100%;
+    border: 1px dashed var(--line-2);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .node.solid { border-style: solid; }
+  .node.hi { border-color: rgba(79, 216, 232, 0.5); color: #d6f5f9; }
+  .node.amber { border-color: rgba(251, 191, 36, 0.42); color: #f7e2ab; }
+
+  .arrow { font-size: 15px; color: var(--muted-2); line-height: 1; }
+  .arrow.bad { color: #e8a04f; }
+  .arrow.good { color: var(--cyan); }
+
+  .loop {
+    border: 1px solid rgba(79, 216, 232, 0.4);
+    border-radius: 14px;
+    padding: 14px;
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    color: #d6f5f9;
+  }
+
+  /* ---------- 网格小卡 ---------- */
+  .grid8 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: clamp(14px, 1.6vw, 22px);
+    overflow: hidden;
+    margin-top: clamp(34px, 4.4vw, 56px);
+  }
+
+  .mini {
+    background: #060608;
+    padding: 24px 22px;
+    transition: background 0.45s var(--ease);
+  }
+
+  .mini:hover { background: #0d0d13; }
+  .mini .k { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-2); }
+  .mini h4 { font-size: 16px; margin: 12px 0 8px; letter-spacing: -0.02em; }
+  .mini p { margin: 0; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  /* ---------- 结尾 ---------- */
+  .end {
+    border: 1px solid var(--line);
+    border-radius: clamp(18px, 2.2vw, 32px);
+    padding: clamp(38px, 6vw, 84px) clamp(24px, 5vw, 68px);
+    text-align: center;
+    background:
+      radial-gradient(120% 130% at 50% -20%, rgba(167, 139, 250, 0.18), transparent 62%),
+      radial-gradient(80% 100% at 88% 112%, rgba(79, 216, 232, 0.14), transparent 60%),
+      #050507;
+  }
+
+  .end .lead { margin: 18px auto 0; }
+
+  .notes {
+    margin: 28px auto 0;
+    max-width: 64ch;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--muted-2);
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: clamp(40px, 5vw, 66px) 0 52px;
+    font-size: 12px;
+    color: var(--muted-2);
+    line-height: 1.9;
+  }
+
+  .foot-brand { letter-spacing: 0.32em; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .foot-links { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 20px; }
+  .foot-links a:hover { color: var(--fg); }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 880px) {
+    .feature.two { grid-template-columns: 1fr; }
+    .feature.rev .art { order: 0; }
+    .compare { grid-template-columns: 1fr; }
+    .grid8 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nav a.item { display: none; }
+    .nav { justify-content: space-between; }
+    .hero { padding-top: 80px; }
+    .tline .who { width: 52px; }
+  }
+
+  @media (max-width: 480px) {
+    .cta-row { gap: 14px; }
+    .btn { padding: 12px 22px; font-size: 15px; }
+    .link { font-size: 15px; }
+    .hero-copy h1 { font-size: clamp(30px, 9.4vw, 40px); }
+    .steps .t { font-size: 14.5px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hero-art img, .scroll-hint, .pulse { animation: none; }
+  }
+</style>
+<script>
+  /* 脚本可用时才启用入场动画；异常时内容默认可见 */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('anim');
+  }
+</script>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a class="brand" href="#top">AURA <em>Intelligence</em></a>
+  <a class="item" href="#abilities">能力</a>
+  <a class="item" href="#translate">同传</a>
+  <a class="item" href="#ambient">主动智能</a>
+  <a class="item" href="#privacy">隐私</a>
+  <a class="item" href="#demo">实测</a>
+  <a class="cta" href="#get">预购</a>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-copy">
+    <p class="eyebrow grad rv">AURA Intelligence</p>
+    <h1 class="rv d1">懂你，不必说全。</h1>
+    <p class="lead rv d2">
+      它听得懂语气，记得住上下文，看得见屏幕。<br>
+      而这一切，都发生在你自己的设备上。
+    </p>
+    <div class="cta-row rv d3">
+      <a class="btn" href="#demo">看看它能做什么</a>
+      <a class="link" href="#privacy">隐私是怎么设计的 <span>›</span></a>
+    </div>
+  </div>
+  <div class="hero-art">
+    <img class="fuse" src="assets/ai-core.webp" alt="AURA Intelligence 智能核心">
+  </div>
+  <div class="scroll-hint">向下滚动</div>
+</header>
+
+<section class="manifesto">
+  <div class="wrap">
+    <p class="mf">以前的助手，等你下命令。</p>
+    <p class="mf">现在的它，替你走完中间那几步。</p>
+  </div>
+</section>
+
+<section class="sect" id="abilities">
+  <div class="wrap center">
+    <p class="eyebrow grad rv">能力</p>
+    <h2 class="h2 rv d1">六件事，它做得比你顺手。</h2>
+    <p class="lead rv d2" style="margin-top:20px">
+      不是六个 App，是同一套理解能力。它在你的对话、相册、会议和屏幕之间自由穿行，
+      因为这一切本来就是同一件事。
+    </p>
+  </div>
+
+  <div class="wrap">
+    <div class="cards">
+      <div class="card rv">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v2M12 19v2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M3 12h2M19 12h2M5.6 18.4L7 17M17 7l1.4-1.4"/><circle cx="12" cy="12" r="3.6"/></svg></div>
+        <h3>端侧大模型</h3>
+        <p>模型就在机身里。飞行模式、地铁隧道、山里的民宿，它都在。</p>
+        <span class="tag">离线可用</span>
+      </div>
+      <div class="card rv d1">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M3 9h2M7 5.5h2M11 2.5h2M15 5.5h2M19 9h2"/><path d="M12 9v12"/><path d="M8 13h8M7 17h4"/></svg></div>
+        <h3>实时同传</h3>
+        <p>通话、视频、面对面，两边说的话同时变成对方听得懂的语言。</p>
+        <span class="tag">低于 0.5 秒</span>
+      </div>
+      <div class="card rv d2">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path d="M7.5 9h9M7.5 12.5h6M7.5 16h4"/></svg></div>
+        <h3>会议纪要</h3>
+        <p>边说边记，谁说了什么分得清。散会时，待办已经按人分好了。</p>
+        <span class="tag">自动待办</span>
+      </div>
+      <div class="card rv">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.6"/><path d="M4 17l4.5-4.5 3.5 3 3-2.5L20 17"/></svg></div>
+        <h3>语义相册</h3>
+        <p>“去年海边那张穿白衬衫的”——用话找图，不用记时间和地点。</p>
+        <span class="tag">自然语言</span>
+      </div>
+      <div class="card rv d1">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3.5" width="10" height="17" rx="2.5"/><path d="M11 18.5h2"/><path d="M2.5 9.5h3M18.5 9.5h3"/></svg></div>
+        <h3>屏幕理解</h3>
+        <p>看到什么就能处理什么：识别、填写、比价、翻译，跨应用一步完成。</p>
+        <span class="tag">跨应用</span>
+      </div>
+      <div class="card rv d2">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/></svg></div>
+        <h3>情境预判</h3>
+        <p>出门前提醒带伞，登机前把登机牌放到锁屏上，不用你问。</p>
+        <span class="tag">主动，但不打扰</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="translate">
+  <div class="wrap">
+    <div class="feature two">
+      <div>
+        <p class="eyebrow grad rv">实时同传</p>
+        <h2 class="h2 rv d1">一句话，<br>两边都听得懂。</h2>
+        <p class="lead rv d2" style="margin-top:20px">
+          对方说日语，你听到中文；你说中文，对方听到日语。延迟低于半秒，
+          语速和语气都保留下来，不像机器在念稿。
+        </p>
+        <ul class="points rv d3">
+          <li>支持 42 种语言互译，口音和方言自适应</li>
+          <li>通话、视频会议、面对面三种场景自动切换</li>
+          <li>只有你双击时才启动，麦克风不常驻</li>
+        </ul>
+      </div>
+      <div class="art rv d1">
+        <img class="fuse" src="assets/ai-voice.webp" alt="实时语音翻译的声波可视化">
+      </div>
+    </div>
+
+    <div class="translator rv d2">
+      <div class="tabs" id="langTabs" role="tablist"></div>
+      <div class="tstage">
+        <div class="tline" id="lineThem">
+          <span class="who">对方</span>
+          <span class="txt" id="txtThem">Could we push the review to Thursday afternoon?</span>
+        </div>
+        <div class="tline ai" id="lineMine">
+          <span class="who">你听到</span>
+          <span class="txt" id="txtMine">评审能挪到周四下午吗？</span>
+        </div>
+      </div>
+      <div class="tfoot">
+        <span class="pulse"></span>
+        <span>端侧处理中 · 语音不离开设备</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="ambient">
+  <div class="wrap">
+    <div class="feature two rev">
+      <div class="art rv">
+        <img class="fuse" src="assets/ai-ambient.webp" alt="环境感知网格">
+      </div>
+      <div>
+        <p class="eyebrow grad rv">主动智能</p>
+        <h2 class="h2 rv d1">它先一步，<br>替你想到。</h2>
+        <p class="lead rv d2" style="margin-top:20px">
+          它不会用弹窗打断你。它把该知道的事放在恰当的位置 —— 一天最多出现几次，
+          每一次都有用。
+        </p>
+        <ul class="points rv d3">
+          <li><b>早晨</b>　通勤路线堵了，提前 20 分钟叫你出门</li>
+          <li><b>会前</b>　把相关的邮件、文件、上次结论摆在你眼前</li>
+          <li><b>夜里</b>　航班延误，改签方案已经备好，等你点头</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="privacy">
+  <div class="wrap center">
+    <p class="eyebrow grad rv">隐私设计</p>
+    <h2 class="h2 rv d1">你的数据，留在你的设备里。</h2>
+    <p class="lead rv d2" style="margin-top:20px">
+      不是“我们会保护你的数据”，而是“我们拿不到”。语音、照片、对话、屏幕内容，
+      都在 AURA N1 上处理完，只留下结果。
+    </p>
+  </div>
+
+  <div class="wrap">
+    <div class="compare">
+      <div class="cp rv">
+        <h4>常见的云端助手</h4>
+        <p class="sub">原始数据需要离开设备</p>
+        <div class="diagram">
+          <div class="node solid">你的语音 / 照片 / 屏幕</div>
+          <div class="arrow bad">↑ 上传原始数据</div>
+          <div class="node amber">第三方云端服务器</div>
+          <div class="arrow bad">↓ 返回结果</div>
+          <div class="node solid">你看到的答案</div>
+        </div>
+      </div>
+      <div class="cp mine rv d1">
+        <h4>AURA Intelligence</h4>
+        <p class="sub">原始数据不出设备</p>
+        <div class="diagram">
+          <div class="loop">
+            你的语音 / 照片 / 屏幕<br>
+            <span style="color:var(--cyan)">↓ AURA N1 · 端侧推理 ↓</span><br>
+            你看到的答案
+          </div>
+          <div class="arrow good">⟳ 全程在机身内闭环</div>
+          <div class="node hi solid">只在需要联网时，发送脱敏后的最小请求</div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="points rv d2" style="margin-top:34px">
+      <li>原始语音不保存、不上传，识别完即被丢弃</li>
+      <li>你的对话绝不用于训练模型</li>
+      <li>本地记忆可随时查看、逐条删除，或一键清空</li>
+    </ul>
+  </div>
+</section>
+
+<section class="sect" id="create">
+  <div class="wrap">
+    <div class="feature two">
+      <div>
+        <p class="eyebrow grad rv">生成能力</p>
+        <h2 class="h2 rv d1">给它一个想法，它给你一个成品。</h2>
+        <p class="lead rv d2" style="margin-top:20px">
+          不是给你一段草稿让你再改半小时，而是直接给出能用的东西：
+          周报、摘要、行程单、修好的照片。
+        </p>
+        <ul class="points rv d3">
+          <li>“把这周的进度写成周报” → 按你的语气成文，附数据</li>
+          <li>随手圈掉照片里多余的人，它把背景补齐</li>
+          <li>一段短视频，自动配字幕、卡节奏、给配乐建议</li>
+        </ul>
+      </div>
+      <div class="art rv d1">
+        <img class="fuse" src="assets/ai-create.webp" alt="生成式创作的光影可视化">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="demo">
+  <div class="wrap center">
+    <p class="eyebrow grad rv">实测</p>
+    <h2 class="h2 rv d1">说一句，剩下的它来。</h2>
+    <p class="lead rv d2" style="margin-top:20px">
+      选一个场景，看它在你没打字的情况下，把事情推进到什么程度。
+    </p>
+  </div>
+
+  <div class="wrap">
+    <div class="demo rv d1">
+      <div class="chips" id="sceneChips"></div>
+      <div class="say">
+        <span class="lbl">你只说</span>
+        <span id="sayText">“下周三去上海出差。”</span>
+      </div>
+      <ol class="steps" id="stepList"></ol>
+      <div class="demo-foot">
+        <span class="demo-note" id="demoNote">以上动作在你确认前不会真正执行</span>
+        <button class="btn ghost" id="replay" type="button">重放一遍</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect">
+  <div class="wrap center">
+    <p class="eyebrow grad rv">能力清单</p>
+    <h2 class="h2 rv d1">它大概会这些。</h2>
+  </div>
+  <div class="wrap wide">
+    <div class="grid8">
+      <div class="mini rv"><div class="k">听觉</div><h4>语音理解</h4><p>多人对话区分说话人，嘈杂环境也能听清。</p></div>
+      <div class="mini rv"><div class="k">视觉</div><h4>视觉识别</h4><p>认得物品、文字、表格、票据和手写体。</p></div>
+      <div class="mini rv d1"><div class="k">语言</div><h4>翻译与润色</h4><p>42 种语言互译，语气和术语都能对齐。</p></div>
+      <div class="mini rv d1"><div class="k">记忆</div><h4>上下文记忆</h4><p>记得你三个月前说过什么，也可以让它忘掉。</p></div>
+      <div class="mini rv d2"><div class="k">检索</div><h4>本地检索</h4><p>在相册、文件、备忘里用一句话定位内容。</p></div>
+      <div class="mini rv d2"><div class="k">生成</div><h4>内容生成</h4><p>写、改、总结、排版，直接在原应用里完成。</p></div>
+      <div class="mini rv d3"><div class="k">代理</div><h4>任务代理</h4><p>跨应用执行多步操作，每一步都可撤回。</p></div>
+      <div class="mini rv d3"><div class="k">安全</div><h4>隐私开关</h4><p>逐项授权，随时查看谁在什么时候用了什么。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="get">
+  <div class="wrap">
+    <div class="end rv">
+      <p class="eyebrow grad" style="margin-bottom:10px">随 AURA One 一同到来</p>
+      <h2 class="display" style="font-size:clamp(28px,4.4vw,60px)">AURA Intelligence</h2>
+      <p class="lead">10 月 17 日开启预购。首批用户可获得 12 个月完整能力包。</p>
+      <div class="cta-row" style="margin-top:32px">
+        <a class="btn" href="#top">立即预购</a>
+        <a class="btn ghost" href="#abilities">再看一遍它能做什么</a>
+      </div>
+      <p class="notes">
+        本页面为 AI 能力概念演示，所有能力与数据均为示意内容；界面中的对话、行程与金额均非真实信息。
+        本站不构成任何实际产品承诺。
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">AURA INTELLIGENCE</div>
+    <div class="foot-links">
+      <a href="#abilities">能力</a>
+      <a href="#translate">实时同传</a>
+      <a href="#ambient">主动智能</a>
+      <a href="#privacy">隐私设计</a>
+      <a href="#demo">实测</a>
+      <a href="#top">回到顶部</a>
+    </div>
+    <div>© 2026 AURA Technology. 保留所有权利。本页面为概念设计稿，非真实产品页面。</div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* 导航固定态 */
+    var nav = document.getElementById('nav');
+    function onScroll() {
+      if (window.scrollY > 24) nav.classList.add('pinned');
+      else nav.classList.remove('pinned');
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    /* 入场动画 */
+    var rvs = Array.prototype.slice.call(document.querySelectorAll('.rv'));
+    if ('IntersectionObserver' in window && !reduce) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+      rvs.forEach(function (el) { io.observe(el); });
+
+      /* 兜底：首屏元素若未被点亮则强制显示 */
+      setTimeout(function () {
+        rvs.forEach(function (el) {
+          if (el.classList.contains('in')) return;
+          var r = el.getBoundingClientRect();
+          if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('in');
+        });
+      }, 1200);
+    } else {
+      rvs.forEach(function (el) { el.classList.add('in'); });
+    }
+
+    /* 宣言逐行点亮 */
+    var mfs = Array.prototype.slice.call(document.querySelectorAll('.mf'));
+    if ('IntersectionObserver' in window && !reduce) {
+      var mio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { e.target.classList.toggle('on', e.isIntersecting); });
+      }, { threshold: 0.6 });
+      mfs.forEach(function (el) { mio.observe(el); });
+    } else {
+      mfs.forEach(function (el) { el.classList.add('on'); });
+    }
+
+    /* ---------- 实时同传演示 ---------- */
+    var LANGS = [
+      { name: 'English', them: 'Could we push the review to Thursday afternoon?', mine: '评审能挪到周四下午吗？' },
+      { name: '日本語', them: 'レビューは木曜の午後に延ばせますか？', mine: '评审能挪到周四下午吗？' },
+      { name: '한국어', them: '검토를 목요일 오후로 미룰 수 있을까요?', mine: '评审能挪到周四下午吗？' },
+      { name: 'Español', them: '¿Podemos mover la revisión al jueves por la tarde?', mine: '评审能挪到周四下午吗？' }
+    ];
+    var tabsBox = document.getElementById('langTabs');
+    var txtThem = document.getElementById('txtThem');
+    var txtMine = document.getElementById('txtMine');
+    var lineThem = document.getElementById('lineThem');
+    var lineMine = document.getElementById('lineMine');
+
+    function selectLang(i) {
+      Array.prototype.forEach.call(tabsBox.children, function (b, j) {
+        b.classList.toggle('on', j === i);
+        b.setAttribute('aria-selected', j === i ? 'true' : 'false');
+      });
+      lineThem.classList.add('out');
+      lineMine.classList.add('out');
+      setTimeout(function () {
+        txtThem.textContent = LANGS[i].them;
+        txtMine.textContent = LANGS[i].mine;
+        lineThem.classList.remove('out');
+        lineMine.classList.remove('out');
+      }, reduce ? 0 : 280);
+    }
+
+    LANGS.forEach(function (l, i) {
+      var b = document.createElement('button');
+      b.className = 'tab' + (i === 0 ? ' on' : '');
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.textContent = l.name;
+      b.addEventListener('click', function () { selectLang(i); });
+      tabsBox.appendChild(b);
+    });
+
+    /* ---------- 任务演示器 ---------- */
+    var SCENES = [
+      {
+        chip: '出差安排',
+        say: '“下周三去上海出差。”',
+        note: '以上动作在你确认前不会真正执行',
+        steps: [
+          '检查日历，确认下周三全天没有冲突',
+          '按你的习惯订好 9:15 虹桥的航班，靠窗',
+          '在外滩步行范围内订了三晚酒店，选你常住的品牌',
+          '生成行程卡，同步给同行的同事',
+          '起飞前 3 小时自动提醒值机，登机牌放进锁屏'
+        ]
+      },
+      {
+        chip: '报销整理',
+        say: '“把这个月的报销整理一下。”',
+        note: '票据识别在端侧完成，图片不外传',
+        steps: [
+          '从相册和邮箱里找出 14 张发票与行程单',
+          '识别金额、日期、发票号，按交通 / 住宿 / 餐饮分类',
+          '总和 ¥4,268，其中两张连号发票已标注待确认',
+          '按公司模板生成报销单，附上对应的原始票据',
+          '填好线上申请表的 11 个字段，等你提交'
+        ]
+      },
+      {
+        chip: '生日提醒',
+        say: '“我妈生日快到了。”',
+        note: '礼物建议基于过去的对话记录，可随时清除',
+        steps: [
+          '想起去年你送过一条围巾，她很喜欢',
+          '给出三个新方案：茶具、行旅包、一场两天的短途',
+          '按预算订好蛋糕，配送时间设在她生日当天上午',
+          '把提醒加进日历，提前一周通知你',
+          '写好一句祝福语草稿，你改两个字就能发'
+        ]
+      }
+    ];
+
+    var chipsBox = document.getElementById('sceneChips');
+    var sayText = document.getElementById('sayText');
+    var stepList = document.getElementById('stepList');
+    var demoNote = document.getElementById('demoNote');
+    var replay = document.getElementById('replay');
+    var timers = [];
+    var userPicked = false;
+
+    function clearTimers() {
+      timers.forEach(clearTimeout);
+      timers = [];
+    }
+
+    function play(idx) {
+      clearTimers();
+      var scene = SCENES[idx];
+      Array.prototype.forEach.call(chipsBox.children, function (b, j) {
+        b.classList.toggle('on', j === idx);
+      });
+      sayText.textContent = scene.say;
+      demoNote.textContent = scene.note;
+      stepList.innerHTML = '';
+      scene.steps.forEach(function (text, i) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span class="n">' + (i + 1) + '</span><span class="t"></span>';
+        li.querySelector('.t').textContent = text;
+        stepList.appendChild(li);
+      });
+      var items = Array.prototype.slice.call(stepList.children);
+      items.forEach(function (li, i) {
+        timers.push(setTimeout(function () {
+          li.classList.add('show');
+          timers.push(setTimeout(function () { li.classList.add('done'); }, 220));
+        }, reduce ? 0 : 320 + i * 520));
+      });
+    }
+
+    SCENES.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.className = 'chip' + (i === 0 ? ' on' : '');
+      b.type = 'button';
+      b.textContent = s.chip;
+      b.addEventListener('click', function () { userPicked = true; play(i); });
+      chipsBox.appendChild(b);
+    });
+
+    replay.addEventListener('click', function () {
+      userPicked = true;
+      var cur = SCENES.findIndex(function (s, i) {
+        return chipsBox.children[i].classList.contains('on');
+      });
+      play(cur < 0 ? 0 : cur);
+    });
+
+    /* 进入视口时自动播放一次（用户已手动选择则不打扰） */
+    var demoBox = document.querySelector('.demo');
+    if (demoBox && 'IntersectionObserver' in window) {
+      var dio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            if (!userPicked) play(0);
+            dio.disconnect();
+          }
+        });
+      }, { threshold: 0.35 });
+      dio.observe(demoBox);
+    }
+    /* 环境异常时的兜底：步骤区不能一直空着 */
+    setTimeout(function () {
+      if (!userPicked && stepList.children.length === 0) play(0);
+    }, 1500);
+  })();
+</script>
+</body>
+</html>
