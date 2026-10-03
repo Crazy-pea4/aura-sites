@@ -22,7 +22,7 @@ python3 -m http.server 8000
 > 建议用本地服务器打开，而不是直接双击 `index.html`——`file://` 协议下部分浏览器的
 > `mix-blend-mode` 渲染会与线上不一致。
 
-## 部署
+## 更新线上
 
 见 **[DEPLOY.md](./DEPLOY.md)**，内含 GitHub Pages / Nginx / 对象存储的完整步骤、
 自检清单与已知坑。
@@ -33,6 +33,18 @@ python3 -m http.server 8000
 brew install gh && gh auth login   # 只需一次
 bash publish.sh                    # 创建仓库 + 推送 + 开启 Pages
 ```
+
+## 导出交付包（需要给别的 agent，或换平台部署时）
+
+本仓库本身就是完整可部署的，通常**不需要**额外的 zip —— 对方直接 clone 即可。
+确有需要（离线交付、换托管平台）时现打包：
+
+```bash
+cd /Users/yemeng/Code/aura
+zip -r -X aura-sites.zip aura-sites -x "aura-sites/.git/*" -x "*.DS_Store"
+```
+
+`-x` 用来排除 `.git` 目录，否则包体积会翻倍。
 
 ## 技术要点
 
