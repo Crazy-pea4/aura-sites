@@ -63,8 +63,8 @@
 
   .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(16px, 2.4vw, 28px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(16px, 2.2vw, 26px);
     margin-top: clamp(38px, 6vw, 64px);
   }
 
@@ -162,7 +162,7 @@
     color: var(--muted-2);
   }
 
-  @media (max-width: 720px) {
+  @media (max-width: 900px) {
     .grid { grid-template-columns: 1fr; }
     .thumb { height: 180px; }
   }
@@ -172,7 +172,7 @@
   <div class="shell">
     <p class="kicker">Concept Design · 2026</p>
     <h1>AURA</h1>
-    <p class="sub">两个页面，同一套设计语言：一个讲硬件产品，一个讲 AI 能力。</p>
+    <p class="sub">三份概念方案，同一套设计语言：一台手机、一套 AI 系统，和一台没有屏幕的手机。</p>
 
     <div class="grid">
       <a class="card" href="aura-phone/">
@@ -192,6 +192,16 @@
           <h2>AURA Intelligence</h2>
           <p>实时同传、情境预判、端侧隐私。所有理解都在设备上完成，不上传原始数据。</p>
           <span class="go">查看能力页 <i>›</i></span>
+        </div>
+      </a>
+
+      <a class="card" href="aura-prism/">
+        <div class="thumb"><img src="aura-prism/assets/prism-hero.webp" alt="AURA Prism 投射全息界面"></div>
+        <div class="body">
+          <p class="tag">概念机</p>
+          <h2>AURA Prism</h2>
+          <p>没有屏幕的手机。界面被投射进空气，用声音、手势与超声波触觉与之交互。</p>
+          <span class="go">查看概念方案 <i>›</i></span>
         </div>
       </a>
     </div>

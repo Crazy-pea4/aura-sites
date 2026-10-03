@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AURA Prism — 没有屏幕的手机。</title>
+<meta name="description" content="AURA Prism：一台没有屏幕的概念手机。界面被投射到你眼前的空气里，用声音、手势和超声波触觉与之交互。">
+<style>
+  :root {
+    --bg: #000;
+    --fg: #f5f5f7;
+    --muted: #8b8b93;
+    --muted-2: #5e5e67;
+    --line: rgba(255, 255, 255, 0.085);
+    --line-2: rgba(255, 255, 255, 0.17);
+    --cyan: #4fd8e8;
+    --violet: #a78bfa;
+    --amber: #fbbf24;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+      "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --ease: cubic-bezier(0.22, 0.7, 0.2, 1);
+    --pad: clamp(20px, 5vw, 110px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font);
+    font-size: 17px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  img { display: block; max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  ::selection { background: rgba(79, 216, 232, 0.32); }
+
+  /* ---------- 导航 ---------- */
+  .nav {
+    position: fixed;
+    inset: 0 0 auto 0;
+    z-index: 100;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(13px, 2.2vw, 34px);
+    padding: 0 var(--pad);
+    border-bottom: 1px solid transparent;
+    transition: background 0.5s var(--ease), backdrop-filter 0.5s var(--ease),
+      border-color 0.5s var(--ease);
+  }
+
+  .nav.pinned {
+    background: rgba(8, 8, 11, 0.74);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-bottom-color: var(--line);
+  }
+
+  .nav .brand {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    margin-right: clamp(6px, 1.5vw, 22px);
+    white-space: nowrap;
+  }
+
+  .nav .brand em { font-style: normal; color: var(--cyan); }
+
+  .nav a.item {
+    font-size: 12px;
+    opacity: 0.8;
+    white-space: nowrap;
+    transition: opacity 0.3s var(--ease);
+  }
+
+  .nav a.item:hover { opacity: 1; }
+
+  .nav .cta {
+    font-size: 12px;
+    padding: 6px 15px;
+    border-radius: 980px;
+    background: var(--fg);
+    color: #000;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: transform 0.3s var(--ease);
+  }
+
+  .nav .cta:hover { transform: scale(1.05); }
+
+  /* ---------- 排版基础 ---------- */
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 var(--pad); }
+  .wrap.wide { max-width: 1340px; }
+
+  h1, h2, h3, h4 { font-weight: 600; letter-spacing: -0.028em; line-height: 1.08; margin: 0; }
+
+  .eyebrow {
+    margin: 0 0 14px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .grad {
+    background: linear-gradient(96deg, var(--violet), var(--cyan) 55%, var(--amber));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .display { font-size: clamp(32px, 5.4vw, 76px); letter-spacing: -0.032em; }
+  .h2 { font-size: clamp(28px, 4vw, 56px); }
+
+  .lead {
+    font-size: clamp(16px, 1.5vw, 20px);
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 52ch;
+  }
+
+  .center { text-align: center; }
+  .center .lead { margin-left: auto; margin-right: auto; }
+
+  .sect { padding: clamp(78px, 11vw, 150px) 0; }
+
+  /* ---------- 入场动画（脚本可用时才启用） ---------- */
+  .anim .rv {
+    opacity: 0;
+    transform: translateY(26px);
+    transition: opacity 0.95s var(--ease), transform 1.05s var(--ease);
+  }
+  .anim .rv.in { opacity: 1; transform: none; }
+  .anim .rv.d1 { transition-delay: 0.08s; }
+  .anim .rv.d2 { transition-delay: 0.16s; }
+  .anim .rv.d3 { transition-delay: 0.24s; }
+
+  /* ---------- 黑底图融合 ---------- */
+  .fuse {
+    mix-blend-mode: screen;
+    -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000 9%, #000 88%, rgba(0,0,0,0) 100%),
+      linear-gradient(to right, rgba(0,0,0,0) 0%, #000 10%, #000 90%, rgba(0,0,0,0) 100%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0) 0%, #000 9%, #000 88%, rgba(0,0,0,0) 100%),
+      linear-gradient(to right, rgba(0,0,0,0) 0%, #000 10%, #000 90%, rgba(0,0,0,0) 100%);
+    mask-composite: intersect;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    padding: 92px 0 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .hero-copy {
+    text-align: center;
+    width: 100%;
+    max-width: 900px;
+    padding: 0 22px;
+    z-index: 3;
+  }
+
+  .hero-copy h1 { font-size: clamp(34px, 6.4vw, 88px); letter-spacing: -0.036em; }
+  .hero-copy .lead { margin: 20px auto 0; }
+
+  .cta-row {
+    margin-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 13px 30px;
+    border-radius: 980px;
+    background: var(--fg);
+    color: #000;
+    font-size: 16px;
+    font-weight: 500;
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+  }
+
+  .btn:hover { transform: scale(1.035); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.07); }
+
+  .btn.ghost {
+    background: transparent;
+    border: 1px solid var(--line-2);
+    color: var(--fg);
+  }
+
+  .btn.ghost:hover { background: rgba(255, 255, 255, 0.06); }
+
+  .link { color: var(--cyan); font-size: 16px; display: inline-flex; align-items: center; gap: 5px; }
+  .link span { transition: transform 0.3s var(--ease); }
+  .link:hover span { transform: translateX(4px); }
+
+  .hero-art {
+    position: relative;
+    flex: 1 1 auto;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    margin-top: clamp(6px, 1.4vh, 24px);
+  }
+
+  .hero-art img {
+    position: relative;
+    z-index: 2;
+    width: min(96vw, 1120px);
+    height: auto;
+  }
+
+  /* CSS 光锥：从画面底部向上扩散的一束光 */
+  .beam {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 340px;
+    height: 62%;
+    transform: translateX(-50%);
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .beam::before,
+  .beam::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to top, rgba(79, 216, 232, 0.5), rgba(167, 139, 250, 0.22) 42%, transparent 88%);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    filter: blur(26px);
+  }
+
+  .beam::after {
+    width: 32%;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.55), rgba(79, 216, 232, 0.3) 40%, transparent 80%);
+    filter: blur(12px);
+    animation: flicker 6s ease-in-out infinite;
+  }
+
+  @keyframes flicker {
+    0%, 100% { opacity: 0.75; }
+    50% { opacity: 1; }
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4;
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--muted-2);
+    animation: nudge 2.6s ease-in-out infinite;
+  }
+
+  @keyframes nudge {
+    0%, 100% { opacity: 0.32; transform: translate(-50%, 0); }
+    50% { opacity: 0.85; transform: translate(-50%, 6px); }
+  }
+
+  /* ---------- 宣言 ---------- */
+  .manifesto {
+    padding: clamp(60px, 9vw, 120px) 0;
+    background: linear-gradient(180deg, #000, #06060a 45%, #000);
+  }
+
+  .manifesto p {
+    margin: 0;
+    font-size: clamp(24px, 3.7vw, 54px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+    line-height: 1.24;
+    color: #6b6b75;
+    transition: color 0.8s var(--ease);
+  }
+
+  .manifesto p.on { color: var(--fg); }
+  .manifesto p + p { margin-top: 0.34em; }
+
+  /* ---------- 图文并排 ---------- */
+  .feature { display: grid; gap: clamp(32px, 5vw, 76px); align-items: center; }
+  .feature.two { grid-template-columns: 1fr 1fr; }
+  .feature .art { position: relative; }
+  .feature .art img { width: 100%; height: auto; }
+  .feature.rev .art { order: 2; }
+
+  .points { list-style: none; margin: 26px 0 0; padding: 0; }
+
+  .points li {
+    position: relative;
+    padding: 14px 0 14px 30px;
+    border-top: 1px solid var(--line);
+    font-size: 15.5px;
+    color: #c9c9d1;
+    line-height: 1.6;
+  }
+
+  .points li:last-child { border-bottom: 1px solid var(--line); }
+
+  .points li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 22px;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cyan), var(--violet));
+  }
+
+  /* ---------- 数据 ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: clamp(16px, 3vw, 46px);
+    margin-top: clamp(34px, 4.4vw, 56px);
+    text-align: center;
+  }
+
+  .stat .num {
+    font-size: clamp(32px, 4.4vw, 62px);
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    background: linear-gradient(180deg, #fff, #9a9aa2);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .stat .num em {
+    font-style: normal;
+    font-size: 0.4em;
+    letter-spacing: 0;
+    margin-left: 4px;
+  }
+
+  .stat .cap { margin-top: 14px; font-size: 14px; color: var(--muted); }
+
+  /* ---------- 空中界面演示 ---------- */
+  .stage-wrap {
+    margin-top: clamp(36px, 5vw, 62px);
+    border: 1px solid var(--line);
+    border-radius: clamp(16px, 2vw, 26px);
+    background:
+      radial-gradient(90% 70% at 50% 108%, rgba(79, 216, 232, 0.12), transparent 62%),
+      radial-gradient(70% 60% at 50% 0%, rgba(167, 139, 250, 0.08), transparent 60%),
+      #040406;
+    overflow: hidden;
+  }
+
+  .stage {
+    position: relative;
+    height: clamp(300px, 42vw, 460px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    perspective: 1200px;
+  }
+
+  .emitter {
+    position: absolute;
+    bottom: 34px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 108px;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #d8d8de, #6f6f78);
+    box-shadow: 0 0 26px rgba(79, 216, 232, 0.5);
+  }
+
+  .emitter::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 300px;
+    background: linear-gradient(to top, rgba(79, 216, 232, 0.34), transparent 78%);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    filter: blur(20px);
+    pointer-events: none;
+  }
+
+  .panels {
+    position: relative;
+    bottom: 96px;
+    width: 100%;
+    height: 0;
+  }
+
+  .panel {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: clamp(130px, 15vw, 180px);
+    height: clamp(96px, 11vw, 132px);
+    margin-left: calc(clamp(130px, 15vw, 180px) / -2);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: linear-gradient(150deg, rgba(79, 216, 232, 0.16), rgba(167, 139, 250, 0.12) 55%, rgba(251, 191, 36, 0.08));
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 34px rgba(79, 216, 232, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    opacity: 0;
+    transform: translateY(28px) scale(0.72);
+    transition: transform 0.85s var(--ease), opacity 0.7s var(--ease), filter 0.85s var(--ease);
+    filter: blur(3px);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 15px 14px;
+  }
+
+  .panel .pt {
+    font-size: 11.5px;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.82);
+  }
+
+  .panel .bar {
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  .panel .bar.s { width: 62%; }
+  .panel .bar.m { width: 84%; }
+  .panel .bar.l { width: 45%; }
+
+  .panel:nth-child(2) { transition-delay: 0.07s; }
+  .panel:nth-child(3) { transition-delay: 0.14s; }
+
+  .panels.open .panel {
+    opacity: 1;
+    filter: blur(0);
+  }
+
+  .panels.open .panel:nth-child(1) { transform: translate3d(-118%, -26px, 0) rotateY(20deg) scale(1); }
+  .panels.open .panel:nth-child(2) { transform: translate3d(0, -62px, 40px) scale(1.06); }
+  .panels.open .panel:nth-child(3) { transform: translate3d(118%, -26px, 0) rotateY(-20deg) scale(1); }
+
+  .stage-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 18px clamp(20px, 3vw, 34px);
+    border-top: 1px solid var(--line);
+  }
+
+  .stage-foot .hint { font-size: 12.5px; color: var(--muted-2); }
+
+  /* ---------- 交互方式卡片 ---------- */
+  .cards4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: clamp(16px, 1.8vw, 26px);
+    overflow: hidden;
+    margin-top: clamp(36px, 4.6vw, 60px);
+  }
+
+  .card4 {
+    background: #060608;
+    padding: clamp(24px, 2.6vw, 36px);
+    transition: background 0.5s var(--ease);
+  }
+
+  .card4:hover { background: #0d0d13; }
+
+  .card4 .k {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted-2);
+  }
+
+  .card4 h3 { font-size: 19px; margin: 14px 0 10px; letter-spacing: -0.02em; }
+  .card4 p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.62; }
+
+  /* ---------- 规格 ---------- */
+  .spec-list { margin-top: clamp(36px, 4.6vw, 60px); border-top: 1px solid var(--line); }
+
+  .spec {
+    display: grid;
+    grid-template-columns: 0.34fr 1fr;
+    gap: 24px;
+    padding: clamp(18px, 2.2vw, 28px) 6px;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+
+  .spec dt { font-size: clamp(15px, 1.4vw, 19px); font-weight: 500; }
+  .spec dd { margin: 0; font-size: clamp(14.5px, 1.35vw, 17px); color: var(--muted); line-height: 1.65; }
+  .spec dd b { color: #d8d8de; font-weight: 500; }
+
+  /* ---------- 结尾 ---------- */
+  .end {
+    border: 1px solid var(--line);
+    border-radius: clamp(18px, 2.2vw, 32px);
+    padding: clamp(38px, 6vw, 84px) clamp(24px, 5vw, 68px);
+    text-align: center;
+    background:
+      radial-gradient(120% 130% at 50% -20%, rgba(79, 216, 232, 0.16), transparent 62%),
+      radial-gradient(80% 100% at 88% 112%, rgba(167, 139, 250, 0.16), transparent 60%),
+      #050507;
+  }
+
+  .end .lead { margin: 18px auto 0; }
+
+  .notes {
+    margin: 28px auto 0;
+    max-width: 64ch;
+    font-size: 12px;
+    line-height: 1.75;
+    color: var(--muted-2);
+  }
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: clamp(40px, 5vw, 66px) 0 52px;
+    font-size: 12px;
+    color: var(--muted-2);
+    line-height: 1.9;
+  }
+
+  .foot-brand { letter-spacing: 0.3em; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+  .foot-links { display: flex; flex-wrap: wrap; gap: 8px 24px; margin-bottom: 20px; }
+  .foot-links a:hover { color: var(--fg); }
+
+  /* ---------- 响应式 ---------- */
+  @media (max-width: 900px) {
+    .feature.two { grid-template-columns: 1fr; }
+    .feature.rev .art { order: 0; }
+    .cards4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .spec { grid-template-columns: 1fr; gap: 8px; }
+    .nav a.item { display: none; }
+    .nav { justify-content: space-between; }
+    .hero { padding-top: 80px; }
+    .panels.open .panel:nth-child(1) { transform: translate3d(-84%, -20px, 0) rotateY(20deg) scale(0.92); }
+    .panels.open .panel:nth-child(3) { transform: translate3d(84%, -20px, 0) rotateY(-20deg) scale(0.92); }
+  }
+
+  @media (max-width: 520px) {
+    .cta-row { gap: 14px; }
+    .btn { padding: 12px 22px; font-size: 15px; }
+    .link { font-size: 15px; }
+    .hero-copy h1 { font-size: clamp(30px, 9.6vw, 42px); }
+    .stats { grid-template-columns: 1fr; gap: 26px; }
+    .cards4 { grid-template-columns: 1fr; }
+    .beam { width: 200px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .beam::after, .scroll-hint { animation: none; }
+    .panel { transition: none; }
+  }
+</style>
+<script>
+  /* 脚本可用时才启用入场动画；异常时内容默认可见 */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('anim');
+  }
+</script>
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <a class="brand" href="#top">AURA <em>Prism</em></a>
+  <a class="item" href="#form">形态</a>
+  <a class="item" href="#light">光</a>
+  <a class="item" href="#surface">界面</a>
+  <a class="item" href="#gesture">交互</a>
+  <a class="item" href="#specs">规格</a>
+  <a class="item" href="../aura-phone/">产品</a>
+  <a class="cta" href="#get">预约</a>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-copy">
+    <p class="eyebrow grad rv">AURA Prism · 概念机</p>
+    <h1 class="rv d1">没有屏幕的手机。</h1>
+    <p class="lead rv d2">
+      界面不再是一块玻璃，而是你眼前的一小片空气。<br>
+      你用声音、手势，和能"摸到"的触觉与它交谈。
+    </p>
+    <div class="cta-row rv d3">
+      <a class="btn" href="#surface">看看界面长什么样</a>
+      <a class="link" href="#form">阅读设计思路 <span>›</span></a>
+    </div>
+  </div>
+  <div class="hero-art">
+    <div class="beam"></div>
+    <img class="fuse" src="assets/prism-hero.webp" alt="AURA Prism 向上投射全息界面">
+  </div>
+  <div class="scroll-hint">向下滚动</div>
+</header>
+
+<section class="manifesto">
+  <div class="wrap">
+    <p class="mf">十五年来，我们把屏幕做得越来越大。</p>
+    <p class="mf">现在该反过来问一句：为什么一定要有屏幕。</p>
+  </div>
+</section>
+
+<section class="sect" id="form">
+  <div class="wrap">
+    <div class="feature two">
+      <div>
+        <p class="eyebrow grad rv">形态</p>
+        <h2 class="h2 rv d1">一支金属，<br>和一片光。</h2>
+        <p class="lead rv d2" style="margin-top:20px">
+          一体成型的钛合金柱体，11 毫米厚。放进口袋时你甚至会忘记带了它 ——
+          直到它在你面前亮起来。
+        </p>
+        <ul class="points rv d3">
+          <li>三面微镜阵列，无接缝、无开孔、无接口</li>
+          <li>磁吸触点充电，方向任意，不必对准</li>
+          <li>没有一块玻璃需要保护，摔在地上的代价只是捡起来</li>
+        </ul>
+      </div>
+      <div class="art rv d1">
+        <img class="fuse" src="assets/prism-metal.webp" alt="AURA Prism 钛金属机身">
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat rv">
+        <div class="num"><span data-count="11">11</span><em>mm</em></div>
+        <div class="cap">机身厚度</div>
+      </div>
+      <div class="stat rv d1">
+        <div class="num"><span data-count="86">86</span><em>g</em></div>
+        <div class="cap">整机重量</div>
+      </div>
+      <div class="stat rv d2">
+        <div class="num"><span data-count="4600">4600</span><em>万</em></div>
+        <div class="cap">微镜阵列单元</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="light">
+  <div class="wrap">
+    <div class="feature two rev">
+      <div class="art rv">
+        <img class="fuse" src="assets/prism-glass.webp" alt="AURA Prism 棱镜投影">
+      </div>
+      <div>
+        <p class="eyebrow grad rv">光</p>
+        <h2 class="h2 rv d1">光从这里出来。</h2>
+        <p class="lead rv d2" style="margin-top:20px">
+          4600 万个微镜把画面直接写进空气，不需要任何介质。<br>
+          它不投射画面，只是把光排成你看见的形状。
+        </p>
+        <ul class="points rv d3">
+          <li>亮度随环境自适应：正午看得清，深夜不刺眼</li>
+          <li>视角 ±60°：站在旁边的人只看到一团模糊的光斑</li>
+          <li>等效 4K 成像，最大投影面积 32 英寸</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="surface">
+  <div class="wrap center">
+    <p class="eyebrow grad rv">界面</p>
+    <h2 class="h2 rv d1">界面可以漂浮，<br>也可以分层。</h2>
+    <p class="lead rv d2" style="margin-top:20px">
+      没有边框，就没有"一块屏幕只能装一件事"的限制。想同时看几样，
+      就铺开几层 —— 它们浮在空气里，各自待在自己该在的深度上。
+    </p>
+  </div>
+
+  <div class="wrap">
+    <div class="stage-wrap rv d1">
+      <div class="stage">
+        <div class="panels" id="panels">
+          <div class="panel">
+            <span class="pt">日程</span>
+            <span class="bar m"></span>
+            <span class="bar s"></span>
+            <span class="bar l"></span>
+          </div>
+          <div class="panel">
+            <span class="pt">地图</span>
+            <span class="bar m"></span>
+            <span class="bar l"></span>
+            <span class="bar s"></span>
+          </div>
+          <div class="panel">
+            <span class="pt">消息</span>
+            <span class="bar s"></span>
+            <span class="bar m"></span>
+            <span class="bar s"></span>
+          </div>
+        </div>
+        <div class="emitter"></div>
+      </div>
+      <div class="stage-foot">
+        <span class="hint">点右侧按钮，看它把界面铺开的样子</span>
+        <button class="btn ghost" id="togglePanels" type="button">展开界面</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="feature two" style="margin-top:clamp(56px,7vw,100px)">
+      <div class="art rv">
+        <img class="fuse" src="assets/prism-interface.webp" alt="悬浮的半透明界面层">
+      </div>
+      <div>
+        <h2 class="h2 rv d1" style="font-size:clamp(24px,3vw,40px)">看得见的距离，<br>也是看得清的主次。</h2>
+        <ul class="points rv d2">
+          <li>越靠前的层越清晰，向后自然虚化 —— 不需要"切换"</li>
+          <li>伸手一抓，可以把任意一层拉近或推远</li>
+          <li>界面跟着视线走：你看哪儿，它往哪儿让</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="gesture">
+  <div class="wrap center">
+    <p class="eyebrow grad rv">交互</p>
+    <h2 class="h2 rv d1">四种方式，<br>没有一种是"划屏幕"。</h2>
+  </div>
+
+  <div class="wrap">
+    <div class="cards4">
+      <div class="card4 rv">
+        <div class="k">01 / 声音</div>
+        <h3>直接说</h3>
+        <p>不用先点亮、不用解锁。它一直在听，但只在被叫到时才记。</p>
+      </div>
+      <div class="card4 rv d1">
+        <div class="k">02 / 手势</div>
+        <h3>在空中比划</h3>
+        <p>捏合抓取、掌心推开、食指一划翻页。摄像头只识别骨骼，不存画面。</p>
+      </div>
+      <div class="card4 rv d2">
+        <div class="k">03 / 触觉</div>
+        <h3>摸得到</h3>
+        <p>超声波在指尖造出真实的阻力与按键感 —— 你能"按到"一层本来不存在的东西。</p>
+      </div>
+      <div class="card4 rv d3">
+        <div class="k">04 / 视线</div>
+        <h3>看哪儿，哪儿亮</h3>
+        <p>虹膜与注视点追踪，界面主动避让你的视线中心，把内容推到该在的地方。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="scene">
+  <div class="wrap">
+    <div class="feature two">
+      <div>
+        <p class="eyebrow grad rv">场景</p>
+        <h2 class="h2 rv d1">它在你需要的<br>地方出现。</h2>
+        <ul class="points rv d2">
+          <li><b>厨房</b>　菜谱浮在案板斜上方，手上有面粉也不用碰它</li>
+          <li><b>会议</b>　把三份资料在桌上铺成一层，谁都能看见</li>
+          <li><b>睡前</b>　关掉投影，房间回到完全的黑暗 —— 不再有一块亮着的砖</li>
+        </ul>
+        <div class="cta-row rv d3" style="justify-content:flex-start">
+          <a class="link" href="#specs">查看完整设计规格 <span>›</span></a>
+        </div>
+      </div>
+      <div class="art rv d1">
+        <img class="fuse" src="assets/prism-scene.webp" alt="夜色中使用 AURA Prism">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sect" id="specs">
+  <div class="wrap">
+    <p class="eyebrow grad rv">设计规格</p>
+    <h2 class="h2 rv d1">AURA Prism</h2>
+
+    <dl class="spec-list">
+      <div class="spec rv">
+        <dt>形态</dt>
+        <dd>一体成型钛合金柱体，<b>11 × 32 × 96 mm</b>，三面微镜阵列，无开孔无接口</dd>
+      </div>
+      <div class="spec rv">
+        <dt>重量</dt>
+        <dd><b>86 g</b></dd>
+      </div>
+      <div class="spec rv">
+        <dt>投影</dt>
+        <dd>4600 万微镜阵列，等效 4K，最大投影面积 32 英寸，亮度 2000 尼特自适应</dd>
+      </div>
+      <div class="spec rv">
+        <dt>交互</dt>
+        <dd>语音、手势骨骼识别、超声波触觉反馈、注视点追踪</dd>
+      </div>
+      <div class="spec rv">
+        <dt>芯片</dt>
+        <dd>AURA N1 神经引擎，全部感知与推理在端侧完成</dd>
+      </div>
+      <div class="spec rv">
+        <dt>续航</dt>
+        <dd>5200mAh，<b>投影常开 6 小时</b>，混合使用 22 小时，待机 9 天</dd>
+      </div>
+      <div class="spec rv">
+        <dt>隐私</dt>
+        <dd>投影视角 ±60°，旁人只见光斑；摄像头只输出骨骼数据，不保存画面</dd>
+      </div>
+      <div class="spec rv">
+        <dt>配色</dt>
+        <dd>深空钛、曙光银</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<section class="sect" id="get">
+  <div class="wrap">
+    <div class="end rv">
+      <p class="eyebrow grad" style="margin-bottom:10px">概念设计 · 2027 年见</p>
+      <h2 class="display" style="font-size:clamp(28px,4.4vw,60px)">AURA Prism</h2>
+      <p class="lead">当屏幕不再是必需品，手机会变成什么样？这是我们目前能给出的一个答案。</p>
+      <div class="cta-row" style="margin-top:32px">
+        <a class="btn" href="#top">留下预约意向</a>
+        <a class="btn ghost" href="#form">再看一遍设计思路</a>
+      </div>
+      <p class="notes">
+        本页面为产品概念设计演示，规格、价格与时间均为示意内容，不构成任何实际产品承诺；
+        站内图像由 AI 生成，仅用于表达设计意图。
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">AURA PRISM</div>
+    <div class="foot-links">
+      <a href="#form">形态</a>
+      <a href="#light">光</a>
+      <a href="#surface">界面</a>
+      <a href="#gesture">交互</a>
+      <a href="#specs">规格</a>
+      <a href="../aura-phone/">AURA One 产品页</a>
+      <a href="../aura-intelligence/">AURA Intelligence</a>
+      <a href="../">返回首页</a>
+      <a href="#top">回到顶部</a>
+    </div>
+    <div>© 2026 AURA Technology. 保留所有权利。本页面为概念设计稿，非真实产品页面。</div>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* 导航固定态 */
+    var nav = document.getElementById('nav');
+    function onScroll() {
+      if (window.scrollY > 24) nav.classList.add('pinned');
+      else nav.classList.remove('pinned');
+    }
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    /* 入场动画 */
+    var rvs = Array.prototype.slice.call(document.querySelectorAll('.rv'));
+    if ('IntersectionObserver' in window && !reduce) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+      rvs.forEach(function (el) { io.observe(el); });
+
+      /* 兜底：首屏元素若未被点亮则强制显示 */
+      setTimeout(function () {
+        rvs.forEach(function (el) {
+          if (el.classList.contains('in')) return;
+          var r = el.getBoundingClientRect();
+          if (r.top < window.innerHeight && r.bottom > 0) el.classList.add('in');
+        });
+      }, 1200);
+    } else {
+      rvs.forEach(function (el) { el.classList.add('in'); });
+    }
+
+    /* 宣言逐行点亮 */
+    var mfs = Array.prototype.slice.call(document.querySelectorAll('.mf'));
+    if ('IntersectionObserver' in window && !reduce) {
+      var mio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { e.target.classList.toggle('on', e.isIntersecting); });
+      }, { threshold: 0.6 });
+      mfs.forEach(function (el) { mio.observe(el); });
+    } else {
+      mfs.forEach(function (el) { el.classList.add('on'); });
+    }
+
+    /* 数字滚动 */
+    var nums = Array.prototype.slice.call(document.querySelectorAll('[data-count]'));
+    nums.forEach(function (el) {
+      el.textContent = (0).toFixed(parseInt(el.getAttribute('data-decimals') || '0', 10));
+    });
+    if ('IntersectionObserver' in window && !reduce && nums.length) {
+      var nio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          nio.unobserve(e.target);
+          var el = e.target;
+          var target = parseFloat(el.getAttribute('data-count'));
+          var start = performance.now();
+          var dur = 1400;
+          (function step(now) {
+            var p = Math.min(1, (now - start) / dur);
+            var eased = 1 - Math.pow(1 - p, 3);
+            el.textContent = String(Math.round(target * eased));
+            if (p < 1) requestAnimationFrame(step);
+            else el.textContent = String(target);
+          })(start);
+        });
+      }, { threshold: 0.5 });
+      nums.forEach(function (el) { nio.observe(el); });
+    } else {
+      nums.forEach(function (el) { el.textContent = el.getAttribute('data-count'); });
+    }
+
+    /* 空中界面演示：展开 / 收起 */
+    var panels = document.getElementById('panels');
+    var toggle = document.getElementById('togglePanels');
+    if (panels && toggle) {
+      var setLabel = function (open) {
+        toggle.textContent = open ? '收起界面' : '展开界面';
+      };
+      toggle.addEventListener('click', function () {
+        var open = panels.classList.toggle('open');
+        setLabel(open);
+      });
+      /* 进入视口时自动展开一次 */
+      if ('IntersectionObserver' in window) {
+        var pio = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) {
+              setTimeout(function () {
+                panels.classList.add('open');
+                setLabel(true);
+              }, 380);
+              pio.disconnect();
+            }
+          });
+        }, { threshold: 0.4 });
+        pio.observe(panels.parentElement);
+      }
+      /* 兜底：环境异常时也要展开，别留一个空场 */
+      setTimeout(function () {
+        if (!panels.classList.contains('open')) {
+          panels.classList.add('open');
+          setLabel(true);
+        }
+      }, 2200);
+    }
+  })();
+</script>
+</body>
+</html>

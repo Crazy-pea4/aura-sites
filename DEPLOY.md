@@ -16,14 +16,18 @@
 
 ```
 aura-sites/
-├── index.html                  # 落地页：两张卡片，分别指向两个子站（入口，约 5KB）
+├── index.html                  # 落地页：三张卡片，分别指向三个子站（入口，约 6KB）
+├── index.html 同级的 .nojekyll / .gitignore / README.md / DEPLOY.md / publish.sh
 ├── aura-phone/
 │   ├── index.html              # 产品站：硬件规格 / 设计 / 影像 / 购买
 │   ├── assets/*.webp           # 4 张产品渲染图
 │   └── poster/*.jpg            # 2 张宣传海报（中/英），供下载，页面未引用
-└── aura-intelligence/
-    ├── index.html              # 能力站：AI 功能 / 同传 / 隐私 / 交互演示
-    └── assets/*.webp           # 5 张 AI 概念图
+├── aura-intelligence/
+│   ├── index.html              # 能力站：AI 功能 / 同传 / 隐私 / 交互演示
+│   └── assets/*.webp           # 5 张 AI 概念图
+└── aura-prism/
+    ├── index.html              # 概念机：一台没有屏幕的手机
+    └── assets/*.webp           # 5 张投影概念图
 ```
 
 | 入口 | 标题 | 主题 |
@@ -31,8 +35,9 @@ aura-sites/
 | `/` | AURA — 概念设计 | 落地导航页 |
 | `/aura-phone/` | AURA One — 它先于你所想。 | 硬件产品 |
 | `/aura-intelligence/` | AURA Intelligence — 懂你，不必说全。 | AI 能力 |
+| `/aura-prism/` | AURA Prism — 没有屏幕的手机。 | 概念机（投影交互） |
 
-**总体积：约 1.9 MB**（图片已全部转为 WebP，原始 PNG 约 26 MB，不要换回去）。
+**总体积：约 2.2 MB**（图片已全部转为 WebP，原始 PNG 约 33 MB，不要换回去）。
 
 ---
 
@@ -137,10 +142,11 @@ coscli sync ./aura-sites/ cos://<bucket>/ --delete
 
 ## 5. 部署后自检（必须逐项验证）
 
-1. **三个入口返回 200 且不是目录列表**：`/`、`/aura-phone/`、`/aura-intelligence/`
-2. **9 张图片全部 200**：
+1. **四个入口返回 200 且不是目录列表**：`/`、`/aura-phone/`、`/aura-intelligence/`、`/aura-prism/`
+2. **14 张图片全部 200**：
    - `aura-phone/assets/` 下 4 个：`img-hero`、`img-chip`、`img-camera`、`img-silhouette`
    - `aura-intelligence/assets/` 下 5 个：`ai-core`、`ai-voice`、`ai-ambient`、`ai-privacy`、`ai-create`
+   - `aura-prism/assets/` 下 5 个：`prism-hero`、`prism-metal`、`prism-glass`、`prism-interface`、`prism-scene`
    - 全部为 `.webp` 后缀
 3. **`.webp` 的 MIME 类型正确**（`image/webp`）。类型错误会导致图片不显示。
 4. **首屏文字可见**（不是一片黑）。这是最常见的事故点：若托管平台"优化"掉了内联脚本或 CSS，会表现为白屏/黑屏。
@@ -181,7 +187,8 @@ coscli sync ./aura-sites/ cos://<bucket>/ --delete
 | 价格与预约时间 | 搜 `7,999`、`10 月 17 日` |
 | 规格参数表 | 搜 `spec-list`（`aura-phone`） |
 | AI 能力文案与演示脚本 | `aura-intelligence` 搜 `SCENES`（交互演示器的三个场景数据）、`LANGS`（同传演示的四种语言） |
-| 落地页两张卡片的标题与描述 | 根目录 `index.html` 的 `.grid` 区块 |
+| 概念机文案与规格 | `aura-prism` 搜 `没有屏幕`、`spec-list`（设计规格表）、`panels`（空中界面演示的三层面板） |
+| 落地页三张卡片的标题与描述 | 根目录 `index.html` 的 `.grid` 区块 |
 | 海报 | `aura-phone/poster/` 下的 JPG，替换同名文件即可 |
 
 改完文案后**不需要**任何构建，直接提交即可。
@@ -204,18 +211,19 @@ coscli sync ./aura-sites/ cos://<bucket>/ --delete
 - **加缓存头**：静态资源 `Cache-Control: public, max-age=31536000, immutable`（文件名带版本号时更安全）。
 - **加 404 页面**：复制根 `index.html` 改文案即可，纯静态即可应对。
 - **给落地页加 OG 图**：用 `aura-phone/poster/aura-one-poster-cn.jpg` 作为 `og:image`，社交分享时更好看。
-- **两站互链**：已完成。产品站与能力站的导航栏、页脚均含指向彼此的链接，并带「返回首页」。
+- **三站互链**：已完成。三个子站的导航栏、页脚均含指向彼此的链接，并带「返回首页」。
 
 ---
 
 ## 10. 验收标准（Definition of Done）
 
-- [ ] 三个入口均可访问，标题分别显示为「AURA — 概念设计」「AURA One — 它先于你所想。」「AURA Intelligence — 懂你，不必说全。」
-- [ ] 9 张 WebP 图片全部正常显示，且与黑色背景自然融合、看不到图片边界
+- [ ] 四个入口均可访问，标题分别为「AURA — 概念设计」「AURA One — 它先于你所想。」「AURA Intelligence — 懂你，不必说全。」「AURA Prism — 没有屏幕的手机。」
+- [ ] 14 张 WebP 图片全部正常显示，且与黑色背景自然融合、看不到图片边界
 - [ ] 移动端（375px）无横向滚动，按钮与文字不重叠
 - [ ] `aura-intelligence` 页面的「实时同传」语言切换可点击切换文本
 - [ ] `aura-intelligence` 页面的「任务演示器」滚动到该区域时步骤能逐条出现
-- [ ] 两个子站之间可从导航栏与页脚互相跳转，且「返回首页」能回到落地页
+- [ ] `aura-prism` 页面的「展开界面 / 收起界面」按钮可切换三层空中面板的展开状态
+- [ ] 三个子站之间可从导航栏与页脚互相跳转，且「返回首页」能回到落地页
 - [ ] 控制台无报错，网络面板无 404
 
 ---
