@@ -204,7 +204,7 @@ coscli sync ./aura-sites/ cos://<bucket>/ --delete
 - **加缓存头**：静态资源 `Cache-Control: public, max-age=31536000, immutable`（文件名带版本号时更安全）。
 - **加 404 页面**：复制根 `index.html` 改文案即可，纯静态即可应对。
 - **给落地页加 OG 图**：用 `aura-phone/poster/aura-one-poster-cn.jpg` 作为 `og:image`，社交分享时更好看。
-- **两站互链**：目前产品站与能力站之间没有互相跳转，仅通过落地页连接。若需要，在各自导航栏加一条链接指向另一个站点即可。
+- **两站互链**：已完成。产品站与能力站的导航栏、页脚均含指向彼此的链接，并带「返回首页」。
 
 ---
 
@@ -215,6 +215,7 @@ coscli sync ./aura-sites/ cos://<bucket>/ --delete
 - [ ] 移动端（375px）无横向滚动，按钮与文字不重叠
 - [ ] `aura-intelligence` 页面的「实时同传」语言切换可点击切换文本
 - [ ] `aura-intelligence` 页面的「任务演示器」滚动到该区域时步骤能逐条出现
+- [ ] 两个子站之间可从导航栏与页脚互相跳转，且「返回首页」能回到落地页
 - [ ] 控制台无报错，网络面板无 404
 
 ---
